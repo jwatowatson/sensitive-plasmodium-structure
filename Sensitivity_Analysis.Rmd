@@ -18,6 +18,7 @@ knitr::opts_chunk$set(cache = T, cache.comments = FALSE,
 library(fastcluster)
 library(RColorBrewer)
 library(dendextend)
+library(plyr)
 library(ape)
 ```
 
@@ -73,7 +74,6 @@ plot(h_IBS,main = '',ylab='Pairwise comparisons',xlab='1-IBS',yaxt='n',
 axis(2, at = 1:5, labels = expression(10, 10^2, 10^3, 10^4, 10^5))
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
-
 h_IBD = hist(IBD_WG[upper.tri(IBD_WG)],breaks = 100,plot=F)
 h_IBD$counts = log10(h_IBD$counts)
 plot(h_IBD, xlab='1-IBD',ylab = 'Pairwise comparisons', 
@@ -94,4 +94,71 @@ plot(IBD_WG[lower.tri(IBD_WG)],  IBS_WG[lower.tri(IBS_WG)], pch='.',
      xlab = '1-IBD', ylab = '1-IBS')
 mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
+
+# PCoA
+
+Add color column to meta data corresponding to kelch mutations
+```{r}
+sort(table(metadata$k13Class))
+
+metadata$`Kelch` = metadata$k13Class
+metadata$`Kelch`[!metadata$`Kelch` %in% c('R539T','Y493H','WT','C580Y','P553L','I543T')] = 'Other'
+metadata$k13colors =
+  mapvalues(metadata$Kelch,
+            from = unique(metadata$Kelch),
+            to=brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))))
+```
+
+Compute PCoA on the distance matrices
+```{r}
+N = nrow(metadata)
+K = 5
+clas_scale_IBS = cmdscale(d = IBS_WG, k = N-1, eig = T, add = F)
+clas_scale_IBD = cmdscale(d = IBD_WG, k = N-1, eig = T, add = F)
+clas_scale_logIBD = cmdscale(d = IBD_neglog2_WG, k = N-1, eig = T, add = F)
+```
+
+```{r PCA_var_explained}
+par(las=1, bty='n', cex.axis=2, cex.lab=2, mar=c(5,5,2,2))
+plot(100*clas_scale_IBS$eig[1:K]/sum(clas_scale_IBS$eig), type='l',lwd=3,
+     ylim=c(0,100), xlab = 'Component number', ylab='Variance explained', xaxt='n')
+axis(1, 1:K)
+lines(100*clas_scale_IBD$eig[1:K]/sum(clas_scale_IBD$eig), lty=2,lwd=3)
+lines(100*clas_scale_logIBD$eig[1:K]/sum(clas_scale_logIBD$eig), lty=3,lwd=3)
+legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2, inset=0.03, bty='n')
+```
+
+
+Comparison of PCs 1-2 for the 3 distance metrics: this is Figure 2
+```{r PCAcomparison_metrics}
+par(mfcol=c(3,1), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
+mycol = metadata$k13colors
+mypch = as.numeric(metadata$PLA1 != 'WT')+1
+
+#***** IBS *****
+X = clas_scale_IBS$points
+plot(-X[,1], X[,2], pch=mypch, bty='n',
+     col=mycol, xlab = 'PC1', ylab='PC2',main='')
+mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
+
+legend('topleft', legend = unique(metadata$Kelch) ,inset = 0.02, bg = 'white', 
+       fill = brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))), 
+       cex=1.3,title = 'PfKelch')
+legend('bottomleft', legend = c('WT','Amplified'), title = 'PfPlasmepsin' ,
+       inset = 0.02, bg = 'white', cex=1.3, pch = 1:2)
+
+#***** IBD *****
+X = clas_scale_IBD$points
+plot(-X[,1], X[,2], pch=mypch, bty='n',
+     col=mycol, xlab = 'PC1', ylab='PC2',main='')
+mtext(text='B', side = 3, adj = 0, line=0.5, cex=1.5)
+
+#***** -log_2 IBD *****
+X = clas_scale_logIBD$points
+plot(-X[,1], X[,2], pch=mypch, bty='n',
+     col=mycol, xlab = 'PC1', ylab='PC2',main='')
+mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
+```
+
+# Tanglegrams
 
