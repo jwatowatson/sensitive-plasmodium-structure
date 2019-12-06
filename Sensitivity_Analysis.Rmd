@@ -25,30 +25,30 @@ library(ape)
 ## Load meta data and pairwise distance matrices
 
 ```{r}
-# meta data on 1468 individuals 
+# meta data on 393 individuals in the TRAC1 study
 load('RData/metadata.RData')
 
-# 1468 x 1468 whole genome based pairwise 1-IBS distance matrix
+# 393 x 393 whole genome based pairwise 1-IBS distance matrix
 load(file = 'RData/IBD_distance_matrix.RData')
 IBD_WG = IBD_dist_matrix
 
-# 1468 x 1468 whole genome pairwise 1-IBD distance matrix
+# 393 x 393 whole genome pairwise 1-IBD distance matrix
 load(file = 'RData/IBS_distance_matrix.RData')
-IBS_WG = as.matrix(IBS_dist_matrix); rm(IBS_dist_matrix)
+IBS_WG = IBS_dist_matrix
 
-# 1468 x 1468 500,000 kb flanking region based pairwise 1-IBD distance matrix
-load(file = 'RData/Chr_13_Flanking_radius_5e+05_IBD_dist_matrix.RData')
-IBD_flanking = IBD_dist_matrix; rm(IBD_dist_matrix)
+# # 1468 x 1468 500,000 kb flanking region based pairwise 1-IBD distance matrix
+# load(file = 'RData/Chr_13_Flanking_radius_5e+05_IBD_dist_matrix.RData')
+# IBD_flanking = IBD_dist_matrix; rm(IBD_dist_matrix)
 
 writeLines(sprintf('There are %s samples in total', nrow(metadata)))
 ```
 
 Overview of the samples and of the mutations (Table 1 in the paper)
 ```{r}
-table(metadata$Country)
-table(metadata$k13Class, metadata$Country)
-table(metadata$PLA1, metadata$Country)
-table(metadata$crt_class, metadata$Country)
+table(metadata$Site)
+table(metadata$k13Class, metadata$Site)
+table(metadata$PLA1, metadata$Site)
+table(metadata$crt_class, metadata$Site)
 ```
 
 Make the -log_2 IBD distance matrix
@@ -67,21 +67,21 @@ This is Figure 1 in the paper
 par(las=1, mar = c(5,6,3,3), cex.axis=1.5, cex.lab=1.5, family = 'serif', bty='n')
 layout(mat = matrix(c(1,2,3,4),nrow = 2,byrow = T))
 
-h_IBS = hist(IBS_WG[upper.tri(IBS_WG)],breaks = 100,plot=F)
+h_IBS = hist(IBS_WG[upper.tri(IBS_WG)],breaks = 30,plot=F)
 h_IBS$counts = log10(h_IBS$counts)
 plot(h_IBS,main = '',ylab='Pairwise comparisons',xlab='1-IBS',yaxt='n', 
      col='lightgrey', border=NA)
 axis(2, at = 1:5, labels = expression(10, 10^2, 10^3, 10^4, 10^5))
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
-h_IBD = hist(IBD_WG[upper.tri(IBD_WG)],breaks = 100,plot=F)
+h_IBD = hist(IBD_WG[upper.tri(IBD_WG)],breaks = 30,plot=F)
 h_IBD$counts = log10(h_IBD$counts)
 plot(h_IBD, xlab='1-IBD',ylab = 'Pairwise comparisons', 
      yaxt='n', col='lightgrey', border=NA,main='')
 axis(2, at = 1:5, labels = expression(10, 10^2, 10^3, 10^4, 10^5))
 mtext(text='B', side = 3, adj = 0, line=0.5, cex=1.5)
 
-h_IBD_log = hist(IBD_neglog2_WG[upper.tri(IBD_neglog2_WG)],breaks = 100,plot=F)
+h_IBD_log = hist(IBD_neglog2_WG[upper.tri(IBD_neglog2_WG)],breaks = 30,plot=F)
 h_IBD_log$counts[h_IBD_log$counts>0] = log10(h_IBD_log$counts[h_IBD_log$counts>0])
 h_IBD_log$counts[h_IBD_log$counts==0] = NA
 not_na_ind = complete.cases(h_IBD_log$counts)
@@ -144,7 +144,7 @@ mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 legend('topleft', legend = unique(metadata$Kelch) ,inset = 0.02, bg = 'white', 
        fill = brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))), 
        cex=1.3,title = 'PfKelch')
-legend('bottomleft', legend = c('WT','Amplified'), title = 'PfPlasmepsin' ,
+legend('topright', legend = c('WT','Amplified'), title = 'PfPlasmepsin' ,
        inset = 0.02, bg = 'white', cex=1.3, pch = 1:2)
 
 #***** IBD *****
@@ -160,5 +160,132 @@ plot(-X[,1], X[,2], pch=mypch, bty='n',
 mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
 
-# Tanglegrams
+# Tanglegram: sensitivity to metric
 
+We do hierachical agglomerative clustering on the 1-IBS and 1-IBD distance matrices using complete linkage. 
+
+```{r, include=F}
+dist_matrices = list(IBS=as.dist(IBS_WG),
+                     IBD=as.dist(IBD_WG),
+                     IBD_neglog=as.dist(IBD_neglog2_WG))
+link_methods = c('complete')
+dend_list = list()
+i = 1
+for(d in 1:length(dist_matrices)){
+  for(m in link_methods){
+    name_i = paste(names(dist_matrices)[d], m, sep='_')
+    
+    hh = fastcluster::hclust(d = dist_matrices[[d]], method = m)
+    dend_list[[i]] = as.dendrogram(hh, hang = 0)
+    
+    i = i+1
+  }
+}
+```
+
+
+
+
+We compare the two dendrograms using a tanglegram
+```{r tanglegram_IBD_logIBD}
+tanglegram(dend1 = dend_list[[1]], dend2 = dend_list[[2]], sort = T,axes=F,lab.cex=NA,
+           color_lines=metadata$k13colors[order.dendrogram(dend_list[[1]])],
+           highlight_distinct_edges=F,faster=T,
+           lwd=.5,highlight_branches_lwd=F,main_left='1-IBS',main_right = '1-IBD')
+legend('bottomright',legend = unique(metadata$Kelch), 
+       fill = unique(metadata$k13colors),title='PfKelch')
+```
+
+# Sensitivity to linkage function
+
+We do hierachical agglomerative clustering on -log 2 IBD using average linkage, complete linkage, single linkage and Ward's criterion.
+
+```{r, include=F}
+dist_matrices = list(logIBD_flank = as.dist(IBD_neglog2_WG))
+link_methods = c('average', 'complete', 'single', 'ward.D')
+dend_list = list()
+HAC_list = list()
+names_list = array(dim = length(dist_matrices)*length(link_methods))
+i = 1
+for(d in 1:length(dist_matrices)){
+  for(m in link_methods){
+    name_i = paste(names(dist_matrices)[d], m, sep='_')
+    
+    HAC_list[[i]] = fastcluster::hclust(d = dist_matrices[[d]], method = m)
+    dend_list[[i]] = as.dendrogram(HAC_list[[i]], hang = 0)
+    names_list[i] = name_i
+    
+    labels(dend_list[[i]])= ''
+    i = i+1
+  }
+}
+
+names(dend_list) = names_list
+```
+
+
+```{r dendograms_metrics_linkage}
+mytitles = c('A','B','C','D')
+my_color_bars = metadata$k13colors
+mylabels = ''
+xx = 18
+dd = dend_list
+par(mar=c(4,6,2,2))
+for(i in 1:length(dend_list)){
+  dd = dend_list[[i]]
+  plot(dd, main='', ylab='', yaxt='n')
+  colored_bars(colors = my_color_bars, dend = dd,
+               add=T, rowLabels = mylabels, cex=4.7)
+
+  if(i ==4){
+    legend('topleft', legend = unique(metadata$Kelch),
+         fill = unique(metadata$k13colors),bty='n',inset=0.03,
+         title = 'PfKelch', cex=2.4)
+  }
+}
+```
+
+
+Aimee's suggestion for showing membership in the clusters as barplots
+```{r barplot_cluster_stability}
+mytitles = c('A','B','C','D')
+mypch = 16*as.numeric(metadata$k13Class == 'C580Y') + 1
+N = nrow(IBD_dist_matrix)
+par(las=1)
+par(las=1, mfrow=c(1,4))
+graph_titles = c('Average linkage', 'Complete linkage', 'Single linkage', 'Ward criterion')
+for(K_clusters in c(3,6,9,12)){
+  clusters_list = list()
+  for(i in 1:length(dend_list)){
+    dd = dend_list[[i]]
+    clusters_list[[i]] = cutree(tree = dd, k = K_clusters)
+    clusters_list[[i]] = mapvalues(x = clusters_list[[i]], 
+                                   from = as.numeric(names(sort(table(clusters_list[[i]])))), 
+                                   to = 1:K_clusters)
+    print(table(clusters_list[[i]]))
+  }
+  
+  mycols = brewer.pal(n = K_clusters, name = 'Paired')
+  
+  
+  barplot(table(clusters_list[[1]]), col = mycols, ylab = 'Number of isolates')
+  if(K_clusters==3) title(graph_titles[1])
+  if(K_clusters==12) title(xlab = 'Cluster number')
+
+  for(Link_alg in 2:length(clusters_list)){
+    cluster_prop = array(dim = c(K_clusters, K_clusters))
+    for(kk1 in 1:K_clusters) {
+      for(kk2 in 1:K_clusters){
+        ind1 = clusters_list[[1]] == kk1
+        ind2 = clusters_list[[Link_alg]] == kk2
+        cluster_prop[kk1,kk2] = sum(ind1 & ind2)
+      }
+    }
+    barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = 'Number of isolates')
+    if(K_clusters==3) title(graph_titles[Link_alg])
+    if(K_clusters==12) title(xlab = 'Cluster number')
+
+  }
+  
+}
+```
