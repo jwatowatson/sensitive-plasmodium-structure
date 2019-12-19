@@ -110,14 +110,14 @@ h_IBS = hist(IBS_WG[upper.tri(IBS_WG)],breaks = 30,plot=F)
 h_IBS$counts = log10(h_IBS$counts)
 plot(h_IBS,main = '',ylab='Pairwise comparisons',xlab='1-IBS',yaxt='n', 
      col='lightgrey', border=NA)
-axis(2, at = 1:5, labels = expression(10, 10^2, 10^3, 10^4, 10^5))
+axis(2, at = 1:4, labels = expression(10, 10^2, 10^3, 10^4))
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
 h_IBD = hist(IBD_WG[upper.tri(IBD_WG)],breaks = 30,plot=F)
 h_IBD$counts = log10(h_IBD$counts)
 plot(h_IBD, xlab='1-IBD',ylab = 'Pairwise comparisons', 
      yaxt='n', col='lightgrey', border=NA,main='')
-axis(2, at = 1:5, labels = expression(10, 10^2, 10^3, 10^4, 10^5))
+axis(2, at = 1:4, labels = expression(10, 10^2, 10^3, 10^4))
 mtext(text='B', side = 3, adj = 0, line=0.5, cex=1.5)
 
 h_IBD_log = hist(IBD_neglog2_WG[upper.tri(IBD_neglog2_WG)],breaks = 30,plot=F)
@@ -219,9 +219,9 @@ mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
 legend('topleft', legend = unique(metadata$Kelch) ,inset = 0.02, bg = 'white', 
        fill = brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))), 
-       cex=1.3,title = 'PfKelch')
+       cex=1.5, title = 'PfKelch')
 legend('topright', legend = c('WT','Amplified'), title = 'PfPlasmepsin' ,
-       inset = 0.02, bg = 'white', cex=1.3, pch = 1:2)
+       inset = 0.02, bg = 'white', cex=1.5, pch = 1:2)
 
 #***** IBD *****
 X = clas_scale_IBD$points
@@ -250,6 +250,7 @@ We do hierachical agglomerative clustering on the 1-IBS and 1-IBD distance matri
 We compare the two dendrograms using a tanglegram
 
 ```r
+par(family = 'serif')
 tanglegram(dend1 = dend_list[[1]], dend2 = dend_list[[2]], sort = T,axes=F,lab.cex=NA,
            color_lines=metadata$k13colors[order.dendrogram(dend_list[[1]])],
            highlight_distinct_edges=F,faster=T,
@@ -274,7 +275,7 @@ my_color_bars = metadata$k13colors
 mylabels = ''
 xx = 18
 dd = dend_list
-par(mar=c(4,6,2,2))
+par(mar=c(4,6,2,2), family = 'serif')
 for(i in 1:length(dend_list)){
   dd = dend_list[[i]]
   plot(dd, main='', ylab='', yaxt='n')
@@ -282,7 +283,7 @@ for(i in 1:length(dend_list)){
                add=T, rowLabels = mylabels, cex=4.7)
 
   if(i ==4){
-    legend('topleft', legend = unique(metadata$Kelch),
+    legend('topright', legend = unique(metadata$Kelch),
          fill = unique(metadata$k13colors),bty='n',inset=0.03,
          title = 'PfKelch', cex=2.4)
   }
@@ -298,8 +299,7 @@ Aimee's suggestion for showing membership in the clusters as barplots
 mytitles = c('A','B','C','D')
 mypch = 16*as.numeric(metadata$k13Class == 'C580Y') + 1
 N = nrow(IBD_dist_matrix)
-par(las=1)
-par(las=1, mfrow=c(1,4))
+par(las=1, mfrow=c(1,4), family = 'serif')
 graph_titles = c('Average linkage', 'Complete linkage', 'Single linkage', 'Ward criterion')
 for(K_clusters in c(3,6,9,12)){
   clusters_list = list()
