@@ -4,3 +4,6 @@ RColorBrewer
 dendextend
 plyr
 ape
+ade4
+treescape
+gplots
