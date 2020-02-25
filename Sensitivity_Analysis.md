@@ -229,31 +229,31 @@ legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2,
 Comparison of PCs 1-2 for the 3 distance metrics: this is Figure 2
 
 ```r
-par(mfcol=c(3,1), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
+par(mfcol=c(1,3), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
 mycol = metadata$k13colors
 mypch = as.numeric(metadata$PLA1 != 'WT')+1
 
 #***** IBS *****
 X = clas_scale_IBS$points
-plot(-X[,1], X[,2], pch=mypch, bty='n',
+plot(-X[,1], X[,2], pch=mypch, bty='n', asp=1,
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
 legend('topleft', legend = unique(metadata$Kelch) ,inset = 0.02, bg = 'white', 
        fill = brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))), 
-       cex=1.1, title = expression(italic(Pfkelch13)))
-legend('topright', legend = c('WT','Amplified'), title = expression(italic(Pfplasmepsin)),
+       cex=1.1, title = expression(italic('Pfkelch13')))
+legend('topright', legend = c('WT','Amplified'), title = expression(italic('Pfplasmepsin')),
        inset = 0.02, bg = 'white', cex=1.1, pch = 1:2)
 
 #***** IBD *****
 X = clas_scale_IBD$points
-plot(-X[,1], X[,2], pch=mypch, bty='n',
+plot(-X[,1], X[,2], pch=mypch, bty='n',asp=1,
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='B', side = 3, adj = 0, line=0.5, cex=1.5)
 
 #***** -log_2 IBD *****
 X = clas_scale_logIBD$points
-plot(-X[,1], X[,2], pch=mypch, bty='n',
+plot(-X[,1], X[,2], pch=mypch, bty='n',asp=1,
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
@@ -314,31 +314,32 @@ for(d in 1:length(dist_matrices)){
 
 
 ```r
-# mytitles = c('A','B','C')
-# my_color_bars = metadata$k13colors
-# mylabels = ''
-# xx = 18
-# dd = dend_list
-# par(mar=c(4,6,2,2), family = 'serif')
-# for(i in 1:length(dend_list)){
-#   
-#   dd = dend_list[[i]]
-#   plot(dd, main='', ylab='', yaxt='n')
-#   colored_bars(colors = my_color_bars, dend = dd,
-#                add=T, rowLabels = mylabels, cex=4.7)
-#   
-#   legend('topright', legend = unique(metadata$Kelch),
-#          fill = unique(metadata$k13colors),bty='n',inset=0.03,
-#          title = 'PfKelch', cex=2.4)
-#   
-# }
+mytitles = c('A','B','C')
+my_color_bars = metadata$k13colors
+mylabels = ''
+xx = 18
+dd = dend_list
+par(mar=c(4,6,2,2), family = 'serif')
+for(i in 1:length(dend_list)){
+
+  dd = dend_list[[i]]
+  plot(dd, main='', ylab='', yaxt='n')
+  colored_bars(colors = my_color_bars, dend = dd,
+               add=T, rowLabels = mylabels, cex=4.7)
+
+  legend('topright', legend = unique(metadata$Kelch),
+         fill = unique(metadata$k13colors),bty='n',inset=0.03,
+         title = 'PfKelch', cex=2.4)
+
+}
 ```
+
+![](Sensitivity_Analysis_files/figure-html/dendograms_distance_sensitivity-1.png)<!-- -->![](Sensitivity_Analysis_files/figure-html/dendograms_distance_sensitivity-2.png)<!-- -->![](Sensitivity_Analysis_files/figure-html/dendograms_distance_sensitivity-3.png)<!-- -->
 
 
 Aimee's suggestion for showing membership in the clusters as barplots
 
 ```r
-mytitles = c('A','B','C')
 par(las=1, mfrow=c(1,3), family = 'serif', cex.axis=1.5, cex.lab=1.5)
 graph_titles = c('A) 1-IBD', 'B) 1-IBS', expression('C) -log'[2]*' IBD'))
 
@@ -487,6 +488,30 @@ for(i in 1:length(dend_list)){
 ![](Sensitivity_Analysis_files/figure-html/dendograms_metrics_linkage-1.png)<!-- -->![](Sensitivity_Analysis_files/figure-html/dendograms_metrics_linkage-2.png)<!-- -->![](Sensitivity_Analysis_files/figure-html/dendograms_metrics_linkage-3.png)<!-- -->![](Sensitivity_Analysis_files/figure-html/dendograms_metrics_linkage-4.png)<!-- -->
 
 
+Random reorderings of dendrogram
+
+```r
+dd1 = dend_list[[1]]
+set.seed(476476)
+dd2 = reorder(dend_list[[1]], wts = runif(N))
+plot(dd1, main='', ylab='', yaxt='n')
+legend('topleft', fill=unique(metadata$k13colors), legend = unique(metadata$k13Class), 
+       bty='n',title = 'Pfkelch')
+colored_bars(colors = my_color_bars, dend = dd1,
+               add=T, rowLabels = mylabels, cex=4.7)
+```
+
+![](Sensitivity_Analysis_files/figure-html/random_ordering_dendrogram-1.png)<!-- -->
+
+```r
+plot(dd2, main='', ylab='', yaxt='n')
+colored_bars(colors = my_color_bars, dend = dd2,
+               add=T, rowLabels = mylabels, cex=4.7)
+```
+
+![](Sensitivity_Analysis_files/figure-html/random_ordering_dendrogram-2.png)<!-- -->
+
+
 Aimee's suggestion for showing membership in the clusters as barplots
 
 ```r
@@ -511,8 +536,7 @@ for(K_clusters in c(3,6,9,12)){
   
   barplot(table(clusters_list[[1]]), col = mycols, ylab = 'Number of isolates')
   mtext(text=paste(mytitles[1],') ', graph_titles[1], sep=''), 
-        side = 3, adj = 0, line=0.5, cex=1)
-  mtext(text=paste(mytitles[1],') ', graph_titles[1], sep=''), side = 3, adj = 0, line=0.5, cex=1)
+        side = 3, adj = 0, line=0.5, cex=1.3)
   title(xlab = 'Cluster number')
   
   for(Link_alg in 2:length(clusters_list)){
@@ -527,7 +551,7 @@ for(K_clusters in c(3,6,9,12)){
     barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = 'Number of isolates')
     title(xlab = 'Cluster number')
     mtext(text=paste(mytitles[Link_alg],') ', graph_titles[Link_alg], sep=''), 
-          side = 3, adj = 0, line=0.5, cex=1)
+          side = 3, adj = 0, line=0.5, cex=1.3)
   }
 }
 ```
@@ -614,21 +638,21 @@ image(z = t(IBD_WG[ind,ind]), x = 1:nrow(IBD_WG),y = 1:nrow(IBD_WG),
       breaks = seq(from = min(IBD_WG), to = max(IBD_WG), length.out = 10),
       col = rev(brewer.pal(n = 9, name = 'Purples')),
       xlab = '', ylab = '', xaxt='n', yaxt='n')
-mtext(text='A) 1-IBD', side = 3, adj = 0, line=0.5, cex=1)
+mtext(text='A) 1-IBD', side = 3, adj = 0, line=0.5, cex=1.3)
 
 ind = order.dendrogram(as.dendrogram(fastcluster::hclust(d = as.dist(IBS_WG), method = 'average')))
 image(z = t(IBS_WG[ind,ind]), x = 1:nrow(IBD_WG),y = 1:nrow(IBD_WG),
       breaks = seq(from = min(IBS_WG), to = max(IBS_WG), length.out = 10),
       col = rev(brewer.pal(n = 9, name = 'Purples')),
       xlab = '', ylab = '', xaxt='n', yaxt='n')
-mtext(text='B) 1-IBS', side = 3, adj = 0, line=0.5, cex=1)
+mtext(text='B) 1-IBS', side = 3, adj = 0, line=0.5, cex=1.3)
 
 ind = order.dendrogram(as.dendrogram(fastcluster::hclust(d = as.dist(IBD_neglog2_WG), method = 'average')))
 image(z = t(1-IBD_neglog2_WG[ind,ind]), x = 1:nrow(IBD_WG),y = 1:nrow(IBD_WG),
       breaks = seq(from = min(IBD_neglog2_WG), to = max(IBD_neglog2_WG), length.out = 10),
       col = rev(brewer.pal(n = 9, name = 'Purples')),
       xlab = '', ylab = '', xaxt='n', yaxt='n')
-mtext(text= expression('C) -log'[2]*' IBD'), side = 3, adj = 0, line=0.5, cex=1)
+mtext(text= expression('C) -log'[2]*' IBD'), side = 3, adj = 0, line=0.5, cex=1.3)
 ```
 
 ![](Sensitivity_Analysis_files/figure-html/heatmaps_HAC-1.png)<!-- -->
@@ -662,7 +686,7 @@ heatmap.2(x = IBS_WG[ind,ind], Rowv = F, Colv = F, dendrogram = "none",
 ind = order.dendrogram(as.dendrogram(fastcluster::hclust(d = as.dist(IBD_neglog2_WG), 
                                                          method = 'average')))
 heatmap.2(x = IBD_neglog2_WG[ind,ind], Rowv = F, Colv = F, dendrogram = "none",
-          breaks = seq(from = min(IBD_neglog2_WG), to = max(IBD_neglog2_WG), length.out = 10),
+          breaks = seq(from = min(IBD_neglog2_WG), to = 2, length.out = 10),
           col = rev(brewer.pal(n = 9, name = 'Purples')), trace = 'none',
           ColSideColors=metadata$k13colors[ind], RowSideColors = metadata$Plasmepcolors[ind],
           key=F, labRow = NA, labCol = NA)
