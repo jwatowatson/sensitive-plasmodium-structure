@@ -35,73 +35,78 @@ writeLines(sprintf('There are %s samples in total', nrow(metadata)))
 Overview of the samples and of the mutations (Table 1 in the paper)
 
 ```r
-table(metadata$Site)
+table(metadata$Country)
 ```
 
 ```
 ## 
-##  ETH   LA NEKH  NKH   VN  WKH 
-##   16   47   56   76   65  133
+## Cambodia     Laos Thailand  Vietnam 
+##      265       47       16       65
 ```
 
 ```r
-table(metadata$k13Class, metadata$Site)
+table(metadata$k13Class, metadata$Country)
 ```
 
 ```
 ##            
-##             ETH  LA NEKH NKH  VN WKH
-##   C580Y       3   0    1  15   6 110
-##   I543T       0   0    0   0  11   2
-##   K13-other   0   0    1   0   1   0
-##   R539T      13   1    0   2   5   8
-##   V568G       0   0    0   0   1   0
-##   WT          0  46   54  56  37  12
-##   Y493H       0   0    0   3   4   1
+##             Cambodia Laos Thailand Vietnam
+##   C580Y          126    0        3       6
+##   I543T            2    0        0      11
+##   K13-other        1    0        0       1
+##   R539T           10    1       13       5
+##   V568G            0    0        0       1
+##   WT             122   46        0      37
+##   Y493H            4    0        0       4
 ```
 
 ```r
-table(metadata$PLA1, metadata$Site)
+table(metadata$PLA1, metadata$Country)
 ```
 
 ```
 ##            
-##             ETH LA NEKH NKH VN WKH
-##   Amplified   0  0    0   2  0  70
-##   WT         16 47   56  74 65  63
+##             Cambodia Laos Thailand Vietnam
+##   Amplified       72    0        0       0
+##   WT             193   47       16      65
 ```
 
 ```r
-table(metadata$crt_class, metadata$Site)
+table(metadata$crt_class, metadata$Country)
 ```
 
 ```
 ##          
-##           ETH  LA NEKH NKH  VN WKH
-##   H97Y      0   0    0   0   0   8
-##   I218F     0   0    0   3   0   4
-##   missing   0   0    3   6   0   8
-##   no_nea   16  47   53  67  65 113
+##           Cambodia Laos Thailand Vietnam
+##   H97Y           8    0        0       0
+##   I218F          7    0        0       0
+##   missing       17    0        0       0
+##   noCRT        233   47       16      65
 ```
 
 Make the -log_2 IBD distance matrix. We also look at other bases for the logarithmic transformation to check robustness of the halving assumption (there is an unknown amount of selfing going on so should be less than 0.5 per outcrossing event).
 
 
 ```r
+sens_parameter = 2 # this can be changed as a sensitivity analysis to max value
+
 IBD_neglog2_WG = -log(1-IBD_WG, base = 2)
 max_val = max(IBD_neglog2_WG[!is.infinite(IBD_neglog2_WG)])
 IBD_neglog2_WG[IBD_neglog2_WG>max_val] = max_val
 
-
 IBD_neglog_WG_robust = -log(1-IBD_WG, base = 1.1) # approx 0.9 per outcrossing event
 max_val = max(IBD_neglog_WG_robust[!is.infinite(IBD_neglog_WG_robust)])
 IBD_neglog_WG_robust[IBD_neglog_WG_robust>max_val] = max_val
+
+IBD_neglog_WG_robust2 = -log(1-IBD_WG, base = 2) 
+max_val = max(IBD_neglog_WG_robust2[!is.infinite(IBD_neglog_WG_robust2)])
+IBD_neglog_WG_robust2[IBD_neglog_WG_robust2>max_val] = max_val*sens_parameter
 ```
 
 
 ## Visualise whole genome pairwise distance matrices
 
-This is Figure 1 in the paper
+This is Figure 2 in the paper
 
 
 ```r
@@ -144,7 +149,7 @@ mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
 
 ![](Sensitivity_Analysis_files/figure-html/IBS_versus_IBD-1.png)<!-- -->
 
-# PCoA
+# PCoA and PCA
 
 Add color column to meta data corresponding to kelch mutations
 
@@ -212,6 +217,43 @@ clas_scale_logIBD_robust = cmdscale(d = IBD_neglog_WG_robust, k = N-1, eig = T, 
 ## 206 of the first 392 eigenvalues are > 0
 ```
 
+```r
+clas_scale_logIBD_robust2 = cmdscale(d = IBD_neglog_WG_robust2, k = N-1, eig = T, add = F)
+```
+
+```
+## Warning in cmdscale(d = IBD_neglog_WG_robust2, k = N - 1, eig = T, add = F):
+## only 206 of the first 392 eigenvalues are > 0
+```
+
+Compute PCA on the co-ancestry matrix
+
+```r
+mypca<-function(x,zeromean=T,fdiag=T){
+  ## do PCA on x %*% t(x) , normalising first if desired
+  xN<-mypcanorm(x,zeromean,fdiag)
+  tcov<-xN %*% t(xN)
+  eigen(tcov)	
+}
+
+
+mypcanorm<-function(x,zeromean=T,fdiag=T){
+  ## Normalise for PCA by setting the diagonal to be the average of the rows, then zero meaning by substracting the row mean (so the diagonal ends up as zero)
+  if(fdiag){
+    diag(x)<-rowSums(x)/(dim(x)[1]-1)
+  }
+  if(zeromean){
+    return(x-rowMeans(x))
+  }else{
+    return(x)
+  }
+}
+# Co-ancestry matrix with Ne = 1
+chunkfile<-"RData/output_Ne_one.chunkcounts.out" 
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
+pcares<-mypca(dataraw)
+```
+
 
 ```r
 par(las=1, bty='n', cex.axis=2, cex.lab=2, mar=c(5,5,2,2))
@@ -229,7 +271,7 @@ legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2,
 Comparison of PCs 1-2 for the 3 distance metrics: this is Figure 2
 
 ```r
-par(mfcol=c(1,3), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
+par(mfcol=c(2,2), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
 mycol = metadata$k13colors
 mypch = as.numeric(metadata$PLA1 != 'WT')+1
 
@@ -256,6 +298,11 @@ X = clas_scale_logIBD$points
 plot(-X[,1], X[,2], pch=mypch, bty='n',asp=1,
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
+
+#****** PCA on co-ancestry ***********
+plot(-pcares$vectors[,1],-pcares$vectors[,2],xlab = 'PC1', ylab='PC2',
+     main='', pch=mypch, col = mycol, bty='n', asp=1)
+mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
 
 ![](Sensitivity_Analysis_files/figure-html/PCAcomparison_metrics-1.png)<!-- -->
@@ -270,7 +317,16 @@ plot(-X[,1], X[,2], pch=mypch, bty='n',
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
 
-![](Sensitivity_Analysis_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](Sensitivity_Analysis_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+```r
+X = clas_scale_logIBD_robust2$points
+plot(-X[,1], X[,2], pch=mypch, bty='n',
+     col=mycol, xlab = 'PC1', ylab='PC2',main='')
+mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
+```
+
+![](Sensitivity_Analysis_files/figure-html/unnamed-chunk-7-2.png)<!-- -->
 
 
 

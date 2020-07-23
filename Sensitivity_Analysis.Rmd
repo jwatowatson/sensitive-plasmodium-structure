@@ -11,7 +11,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = T, cache.comments = FALSE, 
                       include = TRUE, 
-                      fig.width = 8, fig.height = 8,
+                      fig.width = 12, fig.height = 12,
                       fig.pos = 'H', 
                       dev = 'png', dpi = 300)
 
@@ -41,29 +41,34 @@ writeLines(sprintf('There are %s samples in total', nrow(metadata)))
 
 Overview of the samples and of the mutations (Table 1 in the paper)
 ```{r}
-table(metadata$Site)
-table(metadata$k13Class, metadata$Site)
-table(metadata$PLA1, metadata$Site)
-table(metadata$crt_class, metadata$Site)
+table(metadata$Country)
+table(metadata$k13Class, metadata$Country)
+table(metadata$PLA1, metadata$Country)
+table(metadata$crt_class, metadata$Country)
 ```
 
 Make the -log_2 IBD distance matrix. We also look at other bases for the logarithmic transformation to check robustness of the halving assumption (there is an unknown amount of selfing going on so should be less than 0.5 per outcrossing event).
 
 ```{r}
+sens_parameter = 2 # this can be changed as a sensitivity analysis to max value
+
 IBD_neglog2_WG = -log(1-IBD_WG, base = 2)
 max_val = max(IBD_neglog2_WG[!is.infinite(IBD_neglog2_WG)])
 IBD_neglog2_WG[IBD_neglog2_WG>max_val] = max_val
 
-
 IBD_neglog_WG_robust = -log(1-IBD_WG, base = 1.1) # approx 0.9 per outcrossing event
 max_val = max(IBD_neglog_WG_robust[!is.infinite(IBD_neglog_WG_robust)])
 IBD_neglog_WG_robust[IBD_neglog_WG_robust>max_val] = max_val
+
+IBD_neglog_WG_robust2 = -log(1-IBD_WG, base = 2) 
+max_val = max(IBD_neglog_WG_robust2[!is.infinite(IBD_neglog_WG_robust2)])
+IBD_neglog_WG_robust2[IBD_neglog_WG_robust2>max_val] = max_val*sens_parameter
 ```
 
 
 ## Visualise whole genome pairwise distance matrices
 
-This is Figure 1 in the paper
+This is Figure 2 in the paper
 
 ```{r IBS_versus_IBD}
 par(las=1, mar = c(5,6,3,3), cex.axis=1.5, cex.lab=1.5, family = 'serif', bty='n')
@@ -103,7 +108,7 @@ mtext(text='1-IBS', side = 2, line=4, cex=1.5, las=3)
 mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
 
-# PCoA
+# PCoA and PCA
 
 Add color column to meta data corresponding to kelch mutations
 ```{r}
@@ -130,6 +135,34 @@ clas_scale_IBS = cmdscale(d = IBS_WG, k = N-1, eig = T, add = F)
 clas_scale_IBD = cmdscale(d = IBD_WG, k = N-1, eig = T, add = F)
 clas_scale_logIBD = cmdscale(d = IBD_neglog2_WG, k = N-1, eig = T, add = F)
 clas_scale_logIBD_robust = cmdscale(d = IBD_neglog_WG_robust, k = N-1, eig = T, add = F)
+clas_scale_logIBD_robust2 = cmdscale(d = IBD_neglog_WG_robust2, k = N-1, eig = T, add = F)
+```
+
+Compute PCA on the co-ancestry matrix
+```{r}
+mypca<-function(x,zeromean=T,fdiag=T){
+  ## do PCA on x %*% t(x) , normalising first if desired
+  xN<-mypcanorm(x,zeromean,fdiag)
+  tcov<-xN %*% t(xN)
+  eigen(tcov)	
+}
+
+
+mypcanorm<-function(x,zeromean=T,fdiag=T){
+  ## Normalise for PCA by setting the diagonal to be the average of the rows, then zero meaning by substracting the row mean (so the diagonal ends up as zero)
+  if(fdiag){
+    diag(x)<-rowSums(x)/(dim(x)[1]-1)
+  }
+  if(zeromean){
+    return(x-rowMeans(x))
+  }else{
+    return(x)
+  }
+}
+# Co-ancestry matrix with Ne = 1
+chunkfile<-"RData/output_Ne_one.chunkcounts.out" 
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
+pcares<-mypca(dataraw)
 ```
 
 ```{r PCA_var_explained}
@@ -144,8 +177,8 @@ legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2,
 
 
 Comparison of PCs 1-2 for the 3 distance metrics: this is Figure 2
-```{r PCAcomparison_metrics, fig.width=12,fig.height=4}
-par(mfcol=c(1,3), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
+```{r PCAcomparison_metrics}
+par(mfcol=c(2,2), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
 mycol = metadata$k13colors
 mypch = as.numeric(metadata$PLA1 != 'WT')+1
 
@@ -172,12 +205,23 @@ X = clas_scale_logIBD$points
 plot(-X[,1], X[,2], pch=mypch, bty='n',asp=1,
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
+
+#****** PCA on co-ancestry ***********
+plot(-pcares$vectors[,1],-pcares$vectors[,2],xlab = 'PC1', ylab='PC2',
+     main='', pch=mypch, col = mycol, bty='n', asp=1)
+mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
+
 ```
 
 
 Does this differ with a different base in the log transformation? The answer is no.
 ```{r}
 X = clas_scale_logIBD_robust$points
+plot(-X[,1], X[,2], pch=mypch, bty='n',
+     col=mycol, xlab = 'PC1', ylab='PC2',main='')
+mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
+
+X = clas_scale_logIBD_robust2$points
 plot(-X[,1], X[,2], pch=mypch, bty='n',
      col=mycol, xlab = 'PC1', ylab='PC2',main='')
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
