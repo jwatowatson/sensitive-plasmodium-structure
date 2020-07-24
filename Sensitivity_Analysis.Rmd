@@ -138,7 +138,13 @@ clas_scale_logIBD_robust = cmdscale(d = IBD_neglog_WG_robust, k = N-1, eig = T, 
 clas_scale_logIBD_robust2 = cmdscale(d = IBD_neglog_WG_robust2, k = N-1, eig = T, add = F)
 ```
 
-Compute PCA on the co-ancestry matrix
+Compute PCA on the co-ancestry matrix.
+The co-ancestry matrix was computed using the terminal command:
+
+*fs cp -a 0 0 -in -iM -i 10 -n 1000 -j -g trac_cp.phase -r trac_cp.recombfile -t trac_cp.ids -o output_Ne_thousand*
+
+We did a sensitivity analysis varying the value -n (0.1 to 1000).
+
 ```{r}
 mypca<-function(x,zeromean=T,fdiag=T){
   ## do PCA on x %*% t(x) , normalising first if desired
@@ -159,8 +165,8 @@ mypcanorm<-function(x,zeromean=T,fdiag=T){
     return(x)
   }
 }
-# Co-ancestry matrix with Ne = 1
-chunkfile<-"RData/output_Ne_one.chunkcounts.out" 
+# Co-ancestry matrix with Ne = 1000
+chunkfile<-"RData/output_Ne_thousand.chunkcounts.out" 
 dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
 pcares<-mypca(dataraw)
 ```
@@ -176,7 +182,7 @@ legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2,
 ```
 
 
-Comparison of PCs 1-2 for the 3 distance metrics: this is Figure 2
+Comparison of PCs 1-2 for the 4 distance/similarity matrices: this is Figure 2
 ```{r PCAcomparison_metrics}
 par(mfcol=c(2,2), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
 mycol = metadata$k13colors
@@ -207,7 +213,7 @@ plot(-X[,1], X[,2], pch=mypch, bty='n',asp=1,
 mtext(text='C', side = 3, adj = 0, line=0.5, cex=1.5)
 
 #****** PCA on co-ancestry ***********
-plot(-pcares$vectors[,1],-pcares$vectors[,2],xlab = 'PC1', ylab='PC2',
+plot(-pcares$vectors[,1],pcares$vectors[,2],xlab = 'PC1', ylab='PC2',
      main='', pch=mypch, col = mycol, bty='n', asp=1)
 mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
 
@@ -227,6 +233,38 @@ plot(-X[,1], X[,2], pch=mypch, bty='n',
 mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 ```
 
+
+How sensitive is the output of ChromoPainter to the "-n" argument (recombination scaling constant start-value (N_e; default=400000 divided by total number of haplotypes in <geno.filein>))?
+We tried 0.1; 1 and 1000 (approx the default value for this many samples)
+
+```{r}
+chunkfile<-"RData/output_Ne_zeroone.chunkcounts.out" 
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
+pcares1<-mypca(dataraw)
+
+chunkfile<-"RData/output_Ne_one.chunkcounts.out" 
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
+pcares2<-mypca(dataraw)
+
+chunkfile<-"RData/output_Ne_thousand.chunkcounts.out" 
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=0)) # read in the pairwise coincidence 
+pcares3<-mypca(dataraw)
+
+par(mfrow = c(1,3), las=1)
+
+plot(-pcares1$vectors[,1],-pcares1$vectors[,2],xlab = 'PC1', ylab='PC2',
+     main='N_e = 0.1', pch=mypch, col = mycol, bty='n', asp=1)
+mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
+
+plot(-pcares2$vectors[,1],-pcares2$vectors[,2],xlab = 'PC1', ylab='PC2',
+     main='N_e = 1', pch=mypch, col = mycol, bty='n', asp=1)
+mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
+
+plot(-pcares3$vectors[,1],-pcares3$vectors[,2],xlab = 'PC1', ylab='PC2',
+     main='N_e = 1000', pch=mypch, col = mycol, bty='n', asp=1)
+mtext(text='D', side = 3, adj = 0, line=0.5, cex=1.5)
+
+```
 
 
 # Sensitivity to distance
