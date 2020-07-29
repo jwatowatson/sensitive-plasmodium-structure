@@ -337,7 +337,7 @@ for(K_clusters in Cluster_number){
   }
   
   # This is the `red-herring' barplot - one color per cluster
-  barplot(table(clusters_list[[1]]), col = mycols, ylab = '')
+  barplot(table(clusters_list[[1]]), col = mycols, ylab = '',ylim=c(0,355))
   mtext(text= graph_titles[1], side = 3, adj = 0, line=0.5, cex=1.3)
   title(xlab = 'Cluster number',ylab = 'Number of isolates',cex.axis=1.5,cex.lab=1.5)
   
@@ -353,7 +353,7 @@ for(K_clusters in Cluster_number){
         cluster_prop[kk1,kk2] = sum(ind1 & ind2)
       }
     }
-    barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = '',xlab='')
+    barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = '',xlab='',ylim=c(0,350))
     title(xlab = 'Cluster number', ylab = 'Number of isolates', cex.axis=1.5,cex.lab=1.5)
     mtext(text= graph_titles[Link_alg], side = 3, adj = 0, line=0.5, cex=1.3)
   }
@@ -448,7 +448,7 @@ for(K_clusters in c(3,6,9,12)){
   mycols = brewer.pal(n = K_clusters, name = 'Paired')
   
   
-  barplot(table(clusters_list[[1]]), col = mycols, ylab = 'Number of isolates')
+  barplot(table(clusters_list[[1]]), col = mycols, ylab = 'Number of isolates',ylim=c(0,375))
   mtext(text=paste(mytitles[1],') ', graph_titles[1], sep=''), 
         side = 3, adj = 0, line=0.5, cex=1.3)
   title(xlab = 'Cluster number')
@@ -462,7 +462,7 @@ for(K_clusters in c(3,6,9,12)){
         cluster_prop[kk1,kk2] = sum(ind1 & ind2)
       }
     }
-    barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = 'Number of isolates')
+    barplot(cluster_prop, col = mycols, names.arg=1:K_clusters, ylab = 'Number of isolates',ylim=c(0,375))
     title(xlab = 'Cluster number')
     mtext(text=paste(mytitles[Link_alg],') ', graph_titles[Link_alg], sep=''), 
           side = 3, adj = 0, line=0.5, cex=1.3)
