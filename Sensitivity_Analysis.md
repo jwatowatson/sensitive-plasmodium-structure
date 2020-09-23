@@ -277,7 +277,7 @@ legend('topright', legend = c('IBS','IBD','-log2 IBD'), lty = 1:3, lwd=3, cex=2,
 Comparison of PCs 1-2 for the 4 distance/similarity matrices: this is Figure 2
 
 ```r
-par(mfcol=c(2,2), mar=c(5,5,3,5), las=1, cex.lab=1.5, family = 'serif')
+par(mfcol=c(2,2), mar=c(5,5,3,5), las=1, cex.lab=1.5, cex.axis = 1.5, family = 'serif')
 mycol = metadata$k13colors
 mypch = as.numeric(metadata$PLA1 != 'WT')+1
 
@@ -289,9 +289,9 @@ mtext(text='A', side = 3, adj = 0, line=0.5, cex=1.5)
 
 legend('topleft', legend = unique(metadata$Kelch) ,inset = 0.02, bg = 'white', 
        fill = brewer.pal(name = 'Set1', n = length(unique(metadata$Kelch))), 
-       cex=1.1, title = expression(italic('Pfkelch13')))
+       cex=1.3, title = expression(italic('Pfkelch13')))
 legend('topright', legend = c('WT','Amplified'), title = expression(italic('Pfplasmepsin')),
-       inset = 0.02, bg = 'white', cex=1.1, pch = 1:2)
+       inset = 0.02, bg = 'white', cex=1.3, pch = 1:2)
 
 #***** IBD *****
 X = clas_scale_IBD$points
@@ -587,12 +587,13 @@ for(i in 1:length(dend_list)){
 Random reorderings of dendrogram
 
 ```r
+par(mar = c(0,0,0,0))
 dd1 = dend_list[[1]]
 set.seed(476476)
 dd2 = reorder(dend_list[[1]], wts = runif(N))
 plot(dd1, main='', ylab='', yaxt='n')
 legend('topleft', fill=unique(metadata$k13colors), legend = unique(metadata$k13Class), 
-       bty='n',title = 'Pfkelch')
+       title = 'Pfkelch', cex=1.25, inset=0.01)
 colored_bars(colors = my_color_bars, dend = dd1,
                add=T, rowLabels = mylabels, cex=4.7)
 ```
@@ -727,7 +728,7 @@ for(K_clusters in c(3,6,9,12)){
 
 
 ```r
-par(mfrow=c(1,3))
+par(mfrow=c(1,3), mar = c(1,2,3,1))
 
 ind = order.dendrogram(as.dendrogram(fastcluster::hclust(d = as.dist(IBD_WG), method = 'average')))
 image(z = t(IBD_WG[ind,ind]), x = 1:nrow(IBD_WG),y = 1:nrow(IBD_WG),
